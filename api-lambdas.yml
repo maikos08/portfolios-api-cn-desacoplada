@@ -1,0 +1,413 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Lambda with ECR Image"
+
+Parameters:
+  ImageName:
+    Type: String
+    Default: portfolios-app-desacoplada
+    Description: ECR Image name
+
+Resources:
+
+  # Lambdas & Log Groups
+
+  GetPortfolioLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: get-portfolio-lambda
+      PackageType: Image
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImageName}:latest"
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      ImageConfig:
+        Command: ["dist/handlers/getPortfolio.handler"]
+
+  GetPortfoliosLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GetPortfolioLambda}"
+      RetentionInDays: 7
+
+  GetAllPortfoliosLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: get-all-portfolios-lambda
+      PackageType: Image
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImageName}:latest"
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      ImageConfig:
+        Command: ["dist/handlers/getAllPortfolios.handler"]
+
+  GetAllPortfoliosLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GetAllPortfoliosLambda}"
+      RetentionInDays: 7
+
+  DeletePortfolioIdLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: delete-portfolioid-lambda
+      PackageType: Image
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImageName}:latest"
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      ImageConfig:
+        Command: ["dist/handlers/deletePortfolio.handler"]
+
+  DeletePortfolioIdLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${DeletePortfolioIdLambda}"
+      RetentionInDays: 7
+  
+  CreatePortfolioLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: create-portfolio-lambda
+      PackageType: Image
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImageName}:latest"
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      ImageConfig:
+        Command: ["dist/handlers/createPortfolio.handler"]
+
+  CreatePortfolioLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CreatePortfolioLambda}"
+      RetentionInDays: 7
+  
+  UpdatePortfolioLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: update-portfolio-lambda
+      PackageType: Image
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ImageName}:latest"
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+      ImageConfig:
+        Command: ["dist/handlers/updatePortfolio.handler"]
+
+  UpdatePortfolioLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${UpdatePortfolioLambda}"
+      RetentionInDays: 7
+  
+  # Api Gateway REST API
+  PortfoliosApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: PortfoliosApi
+      Description: API Gateway for Portfolios API
+  
+  # API Key
+  PortfoliosApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: PortfoliosApiDeploy
+    Properties:
+      Name: PortfoliosApiKey
+      Description: API Key for Portfolios API
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref PortfoliosApi
+          StageName: prod
+  
+  # Usage Plan for API Key
+  PortfoliosApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: PortfoliosApiDeploy
+    Properties:
+      UsagePlanName: PortfoliosApiUsagePlan
+      Description: Usage Plan for Portfolios API
+      ApiStages:
+        - ApiId: !Ref PortfoliosApi
+          Stage: prod
+      Throttle:
+        BurstLimit: 100
+        RateLimit: 200
+
+  PortfoliosApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref PortfoliosApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref PortfoliosApiUsagePlan
+
+  # Resources
+  PortfoliosResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ParentId: !GetAtt PortfoliosApi.RootResourceId
+      PathPart: portfolios
+  
+  PortfolioIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ParentId: !Ref PortfoliosResource
+      PathPart: "{id}"
+  
+  # Lambda Invoke Permissions
+  GetPortfolioLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetPortfolioLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/GET/portfolios/{id}"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/*/*"
+  
+  GetAllPortfoliosLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetAllPortfoliosLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/GET/portfolios"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/*/*"
+  
+  DeletePortfolioIdLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DeletePortfolioIdLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/DELETE/portfolios/{id}"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/*/*"
+  
+  CreatePortfolioLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CreatePortfolioLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/POST/portfolios"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/*/*"
+  
+  UpdatePortfolioLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UpdatePortfolioLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/PUT/portfolios/{id}"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PortfoliosApi}/*/*/*"
+
+  # OPTIONS /portfolios
+  OptionsPortfoliosMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfoliosResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # GET /portfolios
+  GetPortfoliosMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfoliosResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAllPortfoliosLambdaArn}/invocations
+          - GetAllPortfoliosLambdaArn: !GetAtt GetAllPortfoliosLambda.Arn 
+    
+  # POST /portfolios
+  PostPortfoliosMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfoliosResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePortfolioLambdaArn}/invocations
+          - CreatePortfolioLambdaArn: !GetAtt CreatePortfolioLambda.Arn
+  
+  # OPTIONS /portfolios/{id}
+  OptionsPortfolioIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfolioIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # GET /portfolios/{id}
+  GetPortfolioIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfolioIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPortfolioLambdaArn}/invocations
+          - GetPortfolioLambdaArn: !GetAtt GetPortfolioLambda.Arn
+  
+  # DELETE /portfolios/{id}
+  DeletePortfolioIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfolioIdResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeletePortfolioIdLambdaArn}/invocations
+          - DeletePortfolioIdLambdaArn: !GetAtt DeletePortfolioIdLambda.Arn
+  
+  # PUT /portfolios/{id}
+  PutPortfolioIdMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      ResourceId: !Ref PortfolioIdResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdatePortfolioLambdaArn}/invocations
+          - UpdatePortfolioLambdaArn: !GetAtt UpdatePortfolioLambda.Arn
+  
+  # Api Deploy
+  PortfoliosApiDeploy:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GetPortfoliosMethod
+      - PostPortfoliosMethod
+      - GetPortfolioIdMethod
+      - DeletePortfolioIdMethod
+      - PutPortfolioIdMethod
+      - OptionsPortfoliosMethod
+      - OptionsPortfolioIdMethod
+    Properties:
+      RestApiId: !Ref PortfoliosApi
+      StageName: prod
+      StageDescription:
+        ThrottlingRateLimit: 100
+        ThrottlingBurstLimit: 200
+
+Outputs:
+  GetPortfolioLambdaArn:
+    Description: "Get Portfolio Lambda ARN"
+    Value: !GetAtt GetPortfolioLambda.Arn
+
+  GetAllPortfoliosLambdaArn:
+    Description: "Get All Portfolios Lambda ARN"
+    Value: !GetAtt GetAllPortfoliosLambda.Arn
+
+  DeletePortfolioIdLambdaArn:
+    Description: "Delete Portfolio by ID Lambda ARN"
+    Value: !GetAtt DeletePortfolioIdLambda.Arn
+
+  CreatePortfolioLambdaArn:
+    Description: "Create Portfolio Lambda ARN"
+    Value: !GetAtt CreatePortfolioLambda.Arn
+
+  UpdatePortfolioLambdaArn:
+    Description: "Update Portfolio Lambda ARN"
+    Value: !GetAtt UpdatePortfolioLambda.Arn
+
+  PortfoliosApiId:
+    Description: "Portfolios API Gateway ID"
+    Value: !Ref PortfoliosApi
+
+  PortfoliosApiEndpoint:
+    Description: "Portfolios API Gateway Endpoint"
+    Value: !Sub "https://${PortfoliosApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
+
+  ApiKey:
+    Description: "API Key for Portfolios API"
+    Value: !Ref PortfoliosApiKey
