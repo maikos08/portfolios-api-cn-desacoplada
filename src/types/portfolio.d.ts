@@ -16,3 +16,12 @@ export interface UpdatePortfolioDTO {
   description?: string;
   skills?: string[];
 }
+
+export interface Portfolio {
+  id: string;
+  name: string;
+  description?: string;
+  skills?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
