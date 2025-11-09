@@ -41,10 +41,13 @@ api/
 │   ├── app.ts           # Express app (se mantiene para compilación/local)
 │   ├── server.ts        # bootstrap del servidor (neutralizado para despliegue serverless)
 │   ├── handlers/        # handlers Lambda (entrypoints para AWS Lambda)
+│   ├── utils/           # utilidades compartidas (validation, helpers)
 │   ├── types/           # DTOs / tipos auxiliares
 │   ├── data/
 │   └── config/          # configuración del environment
 │       └── data-source.ts
+│       └── index.ts
+├── .env.example        # ejemplo de variables de entorno
 └── public/              # assets estáticos
     └── index.html
 ```
@@ -94,7 +97,15 @@ NODE_ENV=development
 PORT=8080
 AWS_REGION=us-east-1
 DYNAMODB_TABLE_NAME=Portfolios
+
+# Validation limits (adjust as needed)
+MAX_NAME_LENGTH=100
+MAX_DESCRIPTION_LENGTH=1000
+MAX_SKILLS=50
+MAX_SKILL_LENGTH=50
 ```
+
+Coloca los valores que necesites en tu `.env` para ajustar los límites de nombre, descripción y skills.
 
 ---
 

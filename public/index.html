@@ -400,15 +400,15 @@
       <form id="portfolioForm">
         <input type="hidden" id="portfolioId">
         <div class="form-group">
-          <label for="name">Nombre</label>
-          <input type="text" id="name" required placeholder="Nombre del portfolio">
+          <label for="name">Nombre <small id="nameLimit" style="color:var(--text-secondary);font-weight:400;">(máx. 100 caracteres)</small></label>
+          <input type="text" id="name" required placeholder="Nombre del portfolio" maxlength="100">
         </div>
         <div class="form-group">
-          <label for="description">Descripción</label>
-          <textarea id="description" placeholder="Describe tu portfolio"></textarea>
+          <label for="description">Descripción <small id="descLimit" style="color:var(--text-secondary);font-weight:400;">(máx. 1000 caracteres)</small></label>
+          <textarea id="description" placeholder="Describe tu portfolio" maxlength="1000"></textarea>
         </div>
         <div class="form-group">
-          <label for="skills">Habilidades (separadas por comas)</label>
+          <label for="skills">Habilidades (separadas por comas) <small id="skillsLimit" style="color:var(--text-secondary);font-weight:400;">(máx. 50 skills, 50 caracteres c/u)</small></label>
           <input type="text" id="skills" placeholder="JavaScript, React, Node.js">
         </div>
         <div class="form-actions">
@@ -497,7 +497,20 @@
       e.preventDefault();
       const name = document.getElementById('name').value;
       const description = document.getElementById('description').value;
-      const skills = document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean);
+      const skillsRaw = document.getElementById('skills').value;
+      const skills = skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+      // Client-side validation (keep in sync with server limits)
+      const MAX_NAME_LENGTH = 100;
+      const MAX_DESCRIPTION_LENGTH = 1000;
+      const MAX_SKILLS = 50;
+      const MAX_SKILL_LENGTH = 50;
+
+      if (!name || name.trim().length === 0) { showToast('El nombre es obligatorio', 'error'); return; }
+      if (name.length > MAX_NAME_LENGTH) { showToast(`El nombre excede ${MAX_NAME_LENGTH} caracteres`, 'error'); return; }
+      if (description.length > MAX_DESCRIPTION_LENGTH) { showToast(`La descripción excede ${MAX_DESCRIPTION_LENGTH} caracteres`, 'error'); return; }
+      if (skills.length > MAX_SKILLS) { showToast(`Máximo ${MAX_SKILLS} skills permitidas`, 'error'); return; }
+      for (const s of skills) { if (s.length > MAX_SKILL_LENGTH) { showToast(`Cada skill puede tener hasta ${MAX_SKILL_LENGTH} caracteres`, 'error'); return; } }
       const data = { name, description, skills };
 
       try {

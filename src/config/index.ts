@@ -18,6 +18,12 @@ export const config = {
   dynamodb: {
     tableName: process.env.DYNAMODB_TABLE_NAME || 'Portfolios',
   },
+  limits: {
+    maxNameLength: Number(process.env.MAX_NAME_LENGTH || 100),
+    maxDescriptionLength: Number(process.env.MAX_DESCRIPTION_LENGTH || 1000),
+    maxSkills: Number(process.env.MAX_SKILLS || 50),
+    maxSkillLength: Number(process.env.MAX_SKILL_LENGTH || 50),
+  },
 };
 
 export default config;

@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { dynamoDb } from '../config/data-source';
 import { config } from '../config';
+import { validateUpdatePayload } from '../utils/validation';
 
 const TABLE_NAME = config.dynamodb.tableName;
 
@@ -26,6 +27,16 @@ export const handler = async (
 		}
 
 		const payload = event.body ? JSON.parse(event.body) : {};
+
+		// validate payload with shared utility
+		const validation = validateUpdatePayload(payload);
+		if (!validation.valid) {
+			return {
+				statusCode: 400,
+				headers: CORS_HEADERS,
+				body: JSON.stringify({ error: validation.error }),
+			};
+		}
 
 		// check exists
 		const getCommand = new GetCommand({ TableName: TABLE_NAME, Key: { id } });

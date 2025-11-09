@@ -3,6 +3,7 @@ import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { dynamoDb } from '../config/data-source';
 import { config } from '../config';
+import { validateCreatePayload, VALIDATION_LIMITS } from '../utils/validation';
 
 const TABLE_NAME = config.dynamodb.tableName;
 
@@ -26,7 +27,17 @@ export const handler = async (
 			};
 		}
 
-		const portfolio = {
+			// validate payload with shared utility
+			const validation = validateCreatePayload(payload);
+			if (!validation.valid) {
+				return {
+					statusCode: 400,
+					headers: CORS_HEADERS,
+					body: JSON.stringify({ error: validation.error }),
+				};
+			}
+
+			const portfolio = {
 			id: uuidv4(),
 			name: payload.name,
 			description: payload.description || '',
