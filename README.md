@@ -110,13 +110,13 @@ Después del deploy, en la consola AWS (ECR > Repositories > <tu-repo>) verás l
 Reemplaza `<AWS_ACCOUNT_ID>`, `<AWS_REGION>`, `<ECR_REPO>` y `<LOCAL_IMAGE_NAME>` con tus valores.
 
 ```cmd
-REM Autenticarse en ECR (devuelve token y hace login en docker)
+# Autenticarse en ECR (devuelve token y hace login en docker)
 aws ecr get-login-password --region <AWS_REGION> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com
 
-REM Construir imagen (asegúrate de que 'dist' esté presente: npm run build)
+# Construir imagen (asegúrate de que 'dist' esté presente: npm run build)
 docker build --platform linux/amd64 -t <LOCAL_IMAGE_NAME>:latest -f ./Dockerfile . --provenance=false
 
-REM Etiquetar y enviar
+# Etiquetar y enviar
 docker tag <LOCAL_IMAGE_NAME>:latest <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<ECR_REPO>:latest
 docker push <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<ECR_REPO>:latest
 ```
