@@ -237,7 +237,7 @@ Pasos rápidos para usar la colección:
 2. Importar el environment: Environments → Import → `postman/portfolios-api.postman_environment.json`.
 3. Editar el environment importado y establecer las variables:
   - `base_url`: URL del API Gateway desplegado, recordar añadir el /portfolios.
-  - `api_key`: (opcional) valor del API Key si tu API lo requiere. La colección añade `x-api-key: {{api_key}}` en las peticiones.
+  - `api_key`: API Key, yaque la API lo requiere.
 4. Seleccionar el environment desde la esquina superior derecha en Postman.
 5. Ejecutar la colección manualmente o con Collection Runner. La petición "Create portfolio" guarda el `id` en la variable de environment `portfolioId` para las siguientes peticiones (get/update/delete).
 
