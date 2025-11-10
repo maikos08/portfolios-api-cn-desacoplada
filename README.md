@@ -50,6 +50,9 @@ api/
 ├── .env.example        # ejemplo de variables de entorno
 └── public/              # assets estáticos
     └── index.html
+└── postman/             # Postman collection & environment for automated/manual testing
+  └── portfolios-api.postman_collection.json
+  └── portfolios-api.postman_environment.json
 ```
 
 ---
@@ -223,3 +226,18 @@ Abre `public/index.html` localmente y configura el cliente con:
 
   * `GET /portfolios`
   * `POST /portfolios`
+
+### Postman collection
+
+Se incluye una colección Postman y un fichero de entorno en `postman/` para facilitar pruebas y runs automatizados.
+
+Pasos rápidos para usar la colección:
+
+1. Abrir Postman → Import → seleccionar `postman/portfolios-api.postman_collection.json`.
+2. Importar el environment: Environments → Import → `postman/portfolios-api.postman_environment.json`.
+3. Editar el environment importado y establecer las variables:
+  - `base_url`: URL del API Gateway desplegado, recordar añadir el /portfolios.
+  - `api_key`: (opcional) valor del API Key si tu API lo requiere. La colección añade `x-api-key: {{api_key}}` en las peticiones.
+4. Seleccionar el environment desde la esquina superior derecha en Postman.
+5. Ejecutar la colección manualmente o con Collection Runner. La petición "Create portfolio" guarda el `id` en la variable de environment `portfolioId` para las siguientes peticiones (get/update/delete).
+
